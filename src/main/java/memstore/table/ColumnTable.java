@@ -67,12 +67,15 @@ public class ColumnTable implements Table {
     @Override
     public long columnSum() {
         // TODO: Implement this!
-        int offset = ByteFormat.FIELD_LEN * numRows;
+        int len = ByteFormat.FIELD_LEN * numRows;
         long sum = 0;
-        for(int row = ByteFormat.FIELD_LEN; row < offset; row += ByteFormat.FIELD_LEN){
-//            int val = columns.getInt()
+        for(int row = 0; row < numRows; row ++){
+            sum += columns.getInt(row * ByteFormat.FIELD_LEN);
         }
-        return 0;
+//        for(int row = 0; row < len; row += ByteFormat.FIELD_LEN){
+//            sum += columns.getInt(row);
+//        }
+        return sum;
     }
 
     /**
@@ -85,7 +88,17 @@ public class ColumnTable implements Table {
     @Override
     public long predicatedColumnSum(int threshold1, int threshold2) {
         // TODO: Implement this!
-        return 0;
+        int offset = ByteFormat.FIELD_LEN * numRows;
+        long sum = 0;
+        for(int row = 0; row < numRows; row ++){
+            int col1 = columns.getInt((row * ByteFormat.FIELD_LEN) + offset);
+            int col2 = columns.getInt((row * ByteFormat.FIELD_LEN) + (offset * 2));
+
+            if(col1 > threshold1 && col2 < threshold2)
+                sum += columns.getInt(row * ByteFormat.FIELD_LEN);
+        }
+        return sum;
+
     }
 
     /**
@@ -97,7 +110,23 @@ public class ColumnTable implements Table {
     @Override
     public long predicatedAllColumnsSum(int threshold) {
         // TODO: Implement this!
-        return 0;
+        long totalSum = 0;
+        int offset = ByteFormat.FIELD_LEN * numRows;
+
+       for(int col = 0; col < numCols; col++){
+           int sum = 0;
+           for(int row = 0; row < numRows; row++){
+               int col0 = columns.getInt(row * ByteFormat.FIELD_LEN);
+               if(col0 > threshold){
+                   sum += columns.getInt((ByteFormat.FIELD_LEN * row) + (col * offset));
+               }
+           }
+           System.out.printf("sum of col%s: %s \n",col, sum);
+           totalSum += sum;
+       }
+
+        System.out.printf("total sum: %s\n",totalSum);
+        return totalSum;
     }
 
     /**
@@ -109,6 +138,26 @@ public class ColumnTable implements Table {
     @Override
     public int predicatedUpdate(int threshold) {
         // TODO: Implement this!
-        return 0;
+        int offset = ByteFormat.FIELD_LEN * numRows;
+        int rowUpdated = 0;
+        for(int row = 0; row < numRows; row++){
+            int col0 = columns.getInt(row * ByteFormat.FIELD_LEN);
+
+
+            if(col0 < threshold ){
+                int index0 = (row * ByteFormat.FIELD_LEN);
+                int index2 = index0 + (offset * 2);
+                int index3= index0 +(offset * 3);
+
+                int col2 = columns.getInt(index2);
+                int col3 = columns.getInt(index3);
+                int sum = col3 + col2;
+
+                columns.putInt(index3, sum);
+                rowUpdated+= 1;
+            }
+
+        }
+        return rowUpdated;
     }
 }
