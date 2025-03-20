@@ -67,6 +67,7 @@ public class ColumnTable implements Table {
     @Override
     public long columnSum() {
         // TODO: Implement this!
+//        long sum =
         return 0;
     }
 

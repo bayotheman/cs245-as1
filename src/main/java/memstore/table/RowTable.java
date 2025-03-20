@@ -46,8 +46,7 @@ public class RowTable implements Table {
      */
     @Override
     public int getIntField(int rowId, int colId) {
-        // TODO: Implement this!
-        return 0;
+        return rows.getInt((ByteFormat.FIELD_LEN * numCols * rowId) + colId);
     }
 
     /**
@@ -55,7 +54,8 @@ public class RowTable implements Table {
      */
     @Override
     public void putIntField(int rowId, int colId, int field) {
-        // TODO: Implement this!
+        int index = (ByteFormat.FIELD_LEN * rowId * numCols) + colId;
+        rows.putInt(index, field);
     }
 
     /**
@@ -66,8 +66,7 @@ public class RowTable implements Table {
      */
     @Override
     public long columnSum() {
-        // TODO: Implement this!
-        return 0;
+        return columnSum(0);
     }
 
     /**
@@ -79,8 +78,16 @@ public class RowTable implements Table {
      */
     @Override
     public long predicatedColumnSum(int threshold1, int threshold2) {
-        // TODO: Implement this!
-        return 0;
+        long sum = 0;
+        for(int rowId = 0; rowId < numRows; rowId++){
+            int offset = ByteFormat.FIELD_LEN * numCols * rowId;
+            int col1 = rows.getInt(offset + ByteFormat.FIELD_LEN);
+            int col2 = rows.getInt(offset + ((ByteFormat.FIELD_LEN >> 1) << 2)); // same as ByteFormat.FIELD_LEN  * 2
+            if(col1 > threshold1 && col2 < threshold2){
+                sum += rows.getInt(offset);
+            }
+        }
+        return sum;
     }
 
     /**
@@ -92,9 +99,25 @@ public class RowTable implements Table {
     @Override
     public long predicatedAllColumnsSum(int threshold) {
         // TODO: Implement this!
-        return 0;
+        long sum = 0;
+        for(int colId = 0; colId < numCols; colId++){
+
+            for(int rowId = 0; rowId < numRows; rowId++){
+                int offset = ByteFormat.FIELD_LEN * numCols * rowId + (colId * ByteFormat.FIELD_LEN);
+
+            }
+        }
+        return sum;
     }
 
+    private long columnSum(int colId){
+        long sum = 0;
+        for(int rowId = 0; rowId < numRows; rowId++) {
+            int offset = (ByteFormat.FIELD_LEN * numCols * rowId) + (colId * ByteFormat.FIELD_LEN);
+            sum += rows.getInt(offset);
+        }
+        return sum;
+    }
     /**
      * Implements the query
      *   UPDATE(col3 = col3 + col2) WHERE col0 < threshold;
