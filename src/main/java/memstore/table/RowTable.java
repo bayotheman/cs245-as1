@@ -98,13 +98,17 @@ public class RowTable implements Table {
      */
     @Override
     public long predicatedAllColumnsSum(int threshold) {
-        // TODO: Implement this!
         long sum = 0;
-        for(int colId = 0; colId < numCols; colId++){
-
-            for(int rowId = 0; rowId < numRows; rowId++){
-                int offset = ByteFormat.FIELD_LEN * numCols * rowId + (colId * ByteFormat.FIELD_LEN);
-
+        for(int rowId = 0; rowId < numRows; rowId++){
+            int offset = ByteFormat.FIELD_LEN * numCols * rowId ;
+            int col0 = rows.getInt(offset);
+            if(col0 <= threshold) {
+                continue;
+            }
+            for(int colId = 0; colId < numCols; colId++){
+                offset = (ByteFormat.FIELD_LEN * numCols * rowId) + (colId * ByteFormat.FIELD_LEN) ;
+                int value = rows.getInt(offset);
+                sum+= value;
             }
         }
         return sum;
@@ -126,7 +130,19 @@ public class RowTable implements Table {
      */
     @Override
     public int predicatedUpdate(int threshold) {
-        // TODO: Implement this!
-        return 0;
+        int numOfUpdatedRows = 0;
+        for(int rowId = 0; rowId < numRows; rowId++){
+            int offset = (ByteFormat.FIELD_LEN * numCols * rowId);
+            int col0 = rows.getInt(offset);
+            if(col0 < threshold){
+                int col2Offset = offset + ((ByteFormat.FIELD_LEN >> 1) << 2);
+                int col2 = rows.getInt(col2Offset);
+                int col3Offset = offset + (((ByteFormat.FIELD_LEN >> 1) << 2 ) | 0x04);
+                int col3 = rows.getInt(col3Offset);
+                putIntField(rowId, col3, col2 + col3);
+                numOfUpdatedRows++;
+            }
+        }
+        return numOfUpdatedRows;
     }
 }
